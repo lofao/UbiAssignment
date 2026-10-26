@@ -7,6 +7,7 @@ import lv.uni.ubiassignmentapplication.feature.products.domain.model.assetRelati
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.imageUrl
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.isCamera
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.isIot
+import lv.uni.ubiassignmentapplication.feature.products.domain.model.matchesQuery
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -157,5 +158,27 @@ class ProductDetailsTest {
 
         assertTrue(iotProduct.isIot)
         assertFalse(nonIotProduct.isIot)
+    }
+
+    @Test
+    fun `matchesQuery filters products by name, deviceType, sku, and network capabilities`() {
+        val product = Product(
+            id = "prod-99",
+            productName = "UniFi Switch Pro 24 Port",
+            deviceType = "Switch",
+            imageId = "img",
+            sku = "USW-PRO-24",
+            modelName = "USW-24",
+            numberOfPorts = 24,
+            ethernetMaxSpeedMbps = 10000,
+        )
+
+        assertTrue(product.matchesQuery("unifi"))
+        assertTrue(product.matchesQuery("SWITCH"))
+        assertTrue(product.matchesQuery("USW-PRO-24"))
+        assertTrue(product.matchesQuery("prod-99"))
+        assertTrue(product.matchesQuery("24 port"))
+        assertTrue(product.matchesQuery("10 Gbps"))
+        assertFalse(product.matchesQuery("camera"))
     }
 }

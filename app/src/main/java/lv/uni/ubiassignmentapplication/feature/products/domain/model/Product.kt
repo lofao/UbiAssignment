@@ -43,6 +43,15 @@ fun Product.imageUrl(size: Int = 256): String? {
 
 fun Product.imageUrl(context: Context, size: Int = 256): String? {
     if (imageId == null) return null
+
+    val filesDir = try { context.filesDir } catch (_: Exception) { null }
+    if (filesDir != null) {
+        val overrideFile = java.io.File(filesDir, "assets/$id/override.png")
+        if (overrideFile.exists()) {
+            return overrideFile.absolutePath
+        }
+    }
+
     val relativePaths = assetRelativePaths()
 
     // 1. Check preloaded APK assets (e.g. assets/product-id/imageId.png)
@@ -100,3 +109,34 @@ val Product.isIot: Boolean
                 (line in iotLines) ||
                 iotKeywords.any { keyword -> name.contains(keyword) || dt.contains(keyword) }
     }
+
+fun Product.matchesQuery(query: String): Boolean {
+    val trimmed = query.trim()
+    if (trimmed.isEmpty()) return true
+
+    val keywords = trimmed.lowercase().split("\\s+".toRegex()).filter { it.isNotBlank() }
+    if (keywords.isEmpty()) return true
+
+    return keywords.all { keyword ->
+        productName.contains(keyword, ignoreCase = true) ||
+                (deviceType?.contains(keyword, ignoreCase = true) == true) ||
+                id.contains(keyword, ignoreCase = true) ||
+                (sku?.contains(keyword, ignoreCase = true) == true) ||
+                (modelName?.contains(keyword, ignoreCase = true) == true) ||
+                (lineName?.contains(keyword, ignoreCase = true) == true) ||
+                (lineId?.contains(keyword, ignoreCase = true) == true) ||
+                (abbrev?.contains(keyword, ignoreCase = true) == true) ||
+                shortNames.any { it.contains(keyword, ignoreCase = true) } ||
+                (fcc?.contains(keyword, ignoreCase = true) == true) ||
+                (ic?.contains(keyword, ignoreCase = true) == true) ||
+                (wifiStandard?.contains(keyword, ignoreCase = true) == true) ||
+                formFactors.any { it.contains(keyword, ignoreCase = true) } ||
+                (formattedEthernetSpeed?.contains(keyword, ignoreCase = true) == true) ||
+                (ethernetMaxSpeedMbps?.toString()?.contains(keyword) == true) ||
+                (numberOfPorts?.toString()?.contains(keyword) == true) ||
+                (numberOfPorts != null && "$numberOfPorts port".contains(keyword, ignoreCase = true)) ||
+                (numberOfPorts != null && "$numberOfPorts-port".contains(keyword, ignoreCase = true)) ||
+                (numberOfPorts != null && "$numberOfPorts ports".contains(keyword, ignoreCase = true))
+    }
+}
+

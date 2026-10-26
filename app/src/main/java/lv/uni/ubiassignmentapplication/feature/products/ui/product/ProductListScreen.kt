@@ -21,11 +21,16 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -61,6 +66,7 @@ import lv.uni.ubiassignmentapplication.core.ui.UbiAssignmentApplicationTheme
 import lv.uni.ubiassignmentapplication.core.ui.components.OfflineModeIndicator
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.Product
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.imageUrl
+import lv.uni.ubiassignmentapplication.feature.products.domain.model.matchesQuery
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -110,11 +116,14 @@ fun ProductListScreenContent(
     onErrorShown: () -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
 ) {
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedTab by rememberSaveable { mutableStateOf(ProductTab.ALL) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val filteredProducts = remember(state.products, selectedTab) {
-        state.products.filter { product -> selectedTab.matches(product) }
+    val filteredProducts = remember(state.products, selectedTab, searchQuery) {
+        state.products
+            .filter { product -> selectedTab.matches(product) }
+            .filter { product -> product.matchesQuery(searchQuery) }
     }
 
     LaunchedEffect(selectedTab) {
@@ -133,6 +142,8 @@ fun ProductListScreenContent(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             ProductsTopBar(
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
                 isOffline = state.isOffline,
@@ -150,6 +161,7 @@ fun ProductListScreenContent(
                 EmptyProductsView(
                     isProductsEmpty = state.products.isEmpty(),
                     selectedTabTitle = selectedTab.title,
+                    searchQuery = searchQuery,
                 )
             } else {
                 ProductList(
@@ -164,6 +176,8 @@ fun ProductListScreenContent(
 
 @Composable
 private fun ProductsTopBar(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     selectedTab: ProductTab,
     onTabSelected: (ProductTab) -> Unit,
     isOffline: Boolean,
@@ -174,11 +188,22 @@ private fun ProductsTopBar(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surface,
         ) {
-            PrimaryTabRow(
-                selectedTabIndex = selectedTab.ordinal,
+            Column(
                 modifier = Modifier
                     .statusBarsPadding()
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                ProductSearchField(searchQuery, onSearchQueryChange)
+            }
+        }
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            PrimaryTabRow(
+                selectedTabIndex = selectedTab.ordinal,
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 ProductTab.entries.forEach { tab ->
                     Tab(
@@ -201,9 +226,48 @@ private fun ProductsTopBar(
 }
 
 @Composable
+private fun ProductSearchField(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("Search products...") },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search",
+            )
+        },
+        trailingIcon = {
+            if (searchQuery.isNotEmpty()) {
+                IconButton(onClick = { onSearchQueryChange("") }) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Clear search",
+                    )
+                }
+            }
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(28.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+        ),
+    )
+}
+
+@Composable
 private fun EmptyProductsView(
     isProductsEmpty: Boolean,
     selectedTabTitle: String,
+    searchQuery: String,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -211,10 +275,10 @@ private fun EmptyProductsView(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = if (isProductsEmpty) {
-                "No products available"
-            } else {
-                "No $selectedTabTitle products found"
+            text = when {
+                isProductsEmpty -> "No products available"
+                searchQuery.isNotBlank() -> "No products matching \"$searchQuery\" in $selectedTabTitle"
+                else -> "No $selectedTabTitle products found"
             },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
