@@ -64,7 +64,7 @@ import lv.uni.ubiassignmentapplication.feature.products.domain.model.imageUrl
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun ProductListRoute(
+fun ProductListScreen(
     onProductClick: (Product) -> Unit = {},
     viewModel: ProductsViewModel = koinViewModel(),
 ) {
