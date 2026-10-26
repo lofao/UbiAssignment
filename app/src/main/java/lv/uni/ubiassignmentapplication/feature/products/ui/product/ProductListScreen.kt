@@ -376,7 +376,7 @@ fun ProductListItem(
         Surface(
             modifier = Modifier.size(56.dp),
             shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            //color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
