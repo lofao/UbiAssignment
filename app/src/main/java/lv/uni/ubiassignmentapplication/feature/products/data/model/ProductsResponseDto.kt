@@ -14,6 +14,12 @@ data class ProductsResponseDto(val devices: List<ProductDto>? = null) {
         @SerialName("images") val images: ProductImagesDto? = null,
         @SerialName("line") val line: ProductLineDto? = null,
         @SerialName("shortnames") val shortNames: List<String>? = null,
+        @SerialName("sku") val sku: String? = null,
+        @SerialName("sysid") val sysid: String? = null,
+        @SerialName("compliance") val compliance: ComplianceDto? = null,
+        @SerialName("unifi") val unifi: UnifiDto? = null,
+        @SerialName("wifi") val wifi: String? = null,
+        @SerialName("isARSupported") val isARSupported: Boolean? = null,
     )
 
     @Serializable
@@ -33,6 +39,26 @@ data class ProductsResponseDto(val devices: List<ProductDto>? = null) {
         @SerialName("default") val default: String? = null,
         @SerialName("nopadding") val noPadding: String? = null,
         @SerialName("topology") val topology: String? = null,
+    )
+
+    @Serializable
+    data class ComplianceDto(
+        @SerialName("modelName") val modelName: String? = null,
+        @SerialName("fcc") val fcc: String? = null,
+        @SerialName("ic") val ic: String? = null,
+        @SerialName("rcm") val rcm: Boolean? = null,
+    )
+
+    @Serializable
+    data class UnifiDto(
+        @SerialName("network") val network: UnifiNetworkDto? = null,
+    )
+
+    @Serializable
+    data class UnifiNetworkDto(
+        @SerialName("numberOfPorts") val numberOfPorts: Int? = null,
+        @SerialName("ethernetMaxSpeedMegabitsPerSecond") val ethernetMaxSpeedMegabitsPerSecond: Int? = null,
+        @SerialName("formFactor") val formFactor: List<String>? = null,
     )
 
 }

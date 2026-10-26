@@ -18,6 +18,16 @@ internal fun ProductsResponseDto.ProductDto.toEntity(): ProductEntity? {
         lineId = line?.id,
         lineName = line?.name,
         shortNames = shortNames?.joinToString(",") ?: "",
+        sku = sku,
+        abbrev = product.abbrev,
+        modelName = compliance?.modelName,
+        fcc = compliance?.fcc,
+        ic = compliance?.ic,
+        numberOfPorts = unifi?.network?.numberOfPorts,
+        ethernetMaxSpeedMbps = unifi?.network?.ethernetMaxSpeedMegabitsPerSecond,
+        formFactors = unifi?.network?.formFactor?.joinToString(","),
+        wifiStandard = wifi,
+        isARSupported = isARSupported,
     )
 }
 
@@ -30,6 +40,16 @@ internal fun ProductEntity.toProduct(): Product {
         lineId = lineId,
         lineName = lineName,
         shortNames = if (shortNames.isBlank()) emptyList() else shortNames.split(","),
+        sku = sku,
+        abbrev = abbrev,
+        modelName = modelName,
+        fcc = fcc,
+        ic = ic,
+        numberOfPorts = numberOfPorts,
+        ethernetMaxSpeedMbps = ethernetMaxSpeedMbps,
+        formFactors = if (formFactors.isNullOrBlank()) emptyList() else formFactors.split(","),
+        wifiStandard = wifiStandard,
+        isARSupported = isARSupported ?: false,
     )
 }
 

@@ -7,7 +7,7 @@ import lv.uni.ubiassignmentapplication.feature.products.data.local.entity.Produc
 
 @Database(
     entities = [ProductEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {

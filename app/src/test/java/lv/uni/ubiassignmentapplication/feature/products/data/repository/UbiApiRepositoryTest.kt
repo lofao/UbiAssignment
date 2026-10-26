@@ -48,6 +48,16 @@ class UbiApiRepositoryTest {
                 lineId = "line1",
                 lineName = "Line 1",
                 shortNames = "CP",
+                sku = "SKU1",
+                abbrev = "CP",
+                modelName = "Model 1",
+                fcc = "FCC1",
+                ic = "IC1",
+                numberOfPorts = 4,
+                ethernetMaxSpeedMbps = 1000,
+                formFactors = "DESKTOP",
+                wifiStandard = "5e",
+                isARSupported = false,
             ),
         )
 
