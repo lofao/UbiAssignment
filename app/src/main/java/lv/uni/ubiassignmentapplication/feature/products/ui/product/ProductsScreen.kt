@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -60,11 +62,13 @@ fun ProductsRoute(
     viewModel: ProductsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
     ProductsScreen(
         state = state,
         onProductClick = onProductClick,
         onRetry = viewModel::loadProducts,
         onErrorShown = viewModel::onErrorShown,
+        listState = listState,
     )
 }
 
@@ -74,10 +78,10 @@ fun ProductsScreen(
     onProductClick: (Product) -> Unit = {},
     onRetry: () -> Unit = {},
     onErrorShown: () -> Unit = {},
+    listState: LazyListState = rememberLazyListState(),
 ) {
     UbiAssignmentApplicationTheme {
-        val isLoading = state.isLoading
-        if (isLoading) {
+        if (state.isLoading && state.products.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
@@ -90,6 +94,7 @@ fun ProductsScreen(
                 onProductClick = onProductClick,
                 onRetry = onRetry,
                 onErrorShown = onErrorShown,
+                listState = listState,
             )
         }
     }
@@ -101,6 +106,7 @@ fun ProductsScreenContent(
     onProductClick: (Product) -> Unit = {},
     onRetry: () -> Unit = {},
     onErrorShown: () -> Unit = {},
+    listState: LazyListState = rememberLazyListState(),
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(ProductTab.ALL) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -177,6 +183,7 @@ fun ProductsScreenContent(
             }
         } else {
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),

@@ -55,7 +55,7 @@ import lv.uni.ubiassignmentapplication.feature.products.domain.model.imageUrl
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.isCamera
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.isIot
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailsScreen(
     product: Product,
@@ -95,307 +95,345 @@ fun ProductDetailsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Product Image Hero Card
-            Card(
+            ProductHeroImageCard(product = product)
+
+            ProductHeaderSection(product = product)
+
+            ProductGeneralInfoCard(product = product)
+
+            ProductHardwareSpecsCard(product = product)
+
+            //Compliance section is optional
+            //ProductComplianceCard(product = product)
+
+            ProductShortNamesCard(product = product)
+        }
+    }
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+private fun ProductHeroImageCard(
+    product: Product,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(240.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            val imageUrl = product.imageUrl(512)
+            if (!imageUrl.isNullOrEmpty()) {
+                GlideImage(
+                    model = imageUrl,
+                    contentDescription = product.productName,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit,
+                ) { requestBuilder ->
+                    requestBuilder.diskCacheStrategy(DiskCacheStrategy.ALL)
+                }
+            } else {
+                Text(
+                    text = "No image available",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductHeaderSection(
+    product: Product,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = product.productName,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            product.sku?.let { sku ->
+                if (sku.isNotBlank()) {
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(text = "SKU: $sku") },
+                    )
+                }
+            }
+            product.deviceType?.let { deviceType ->
+                if (deviceType.isNotBlank()) {
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(text = deviceType) },
+                    )
+                }
+            }
+            product.wifiStandard?.let { wifi ->
+                if (wifi.isNotBlank()) {
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text(text = "Wi-Fi $wifi") },
+                    )
+                }
+            }
+            if (product.isCamera) {
+                SuggestionChip(
+                    onClick = {},
+                    label = { Text(text = "Camera") },
+                )
+            }
+            if (product.isIot) {
+                SuggestionChip(
+                    onClick = {},
+                    label = { Text(text = "IoT") },
+                )
+            }
+            if (product.isARSupported) {
+                SuggestionChip(
+                    onClick = {},
+                    label = { Text(text = "AR Supported") },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductGeneralInfoCard(
+    product: Product,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "General Info",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            product.lineName?.let { lineName ->
+                if (lineName.isNotBlank()) {
+                    DetailRow(label = "Product Line", value = lineName)
+                }
+            }
+
+            product.deviceType?.let { deviceType ->
+                if (deviceType.isNotBlank()) {
+                    DetailRow(label = "Device Type", value = deviceType)
+                }
+            }
+
+            DetailRow(
+                label = "Product ID",
+                value = product.id,
+                isSelectable = true,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProductHardwareSpecsCard(
+    product: Product,
+    modifier: Modifier = Modifier,
+) {
+    val hasHardwareSpecs = product.numberOfPorts != null ||
+            product.ethernetMaxSpeedMbps != null ||
+            product.formFactors.isNotEmpty()
+
+    if (!hasHardwareSpecs) return
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Hardware Specifications",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            product.numberOfPorts?.let { ports ->
+                DetailRow(label = "Number of Ports", value = ports.toString())
+            }
+
+            product.formattedEthernetSpeed?.let { speed ->
+                DetailRow(label = "Max Ethernet Speed", value = speed)
+            }
+
+            if (product.formFactors.isNotEmpty()) {
+                DetailRow(
+                    label = "Form Factor",
+                    value = product.formFactors.joinToString(", "),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductComplianceCard(
+    product: Product,
+    modifier: Modifier = Modifier,
+) {
+    val hasCompliance = !product.modelName.isNullOrBlank() ||
+            !product.fcc.isNullOrBlank() ||
+            !product.ic.isNullOrBlank()
+
+    if (!hasCompliance) return
+
+    var isComplianceExpanded by rememberSaveable { mutableStateOf(false) }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        ) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val imageUrl = product.imageUrl(512)
-                    if (!imageUrl.isNullOrEmpty()) {
-                        GlideImage(
-                            model = imageUrl,
-                            contentDescription = product.productName,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Fit,
-                        ) { requestBuilder ->
-                            requestBuilder.diskCacheStrategy(DiskCacheStrategy.ALL)
-                        }
-                    } else {
-                        Text(
-                            text = "No image available",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-
-            // Title and Badges
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                    .clickable { isComplianceExpanded = !isComplianceExpanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = product.productName,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    text = "Compliance & Model",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
                 )
-
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    product.sku?.let { sku ->
-                        if (sku.isNotBlank()) {
-                            AssistChip(
-                                onClick = {},
-                                label = { Text(text = "SKU: $sku") },
-                            )
-                        }
-                    }
-                    product.deviceType?.let { deviceType ->
-                        if (deviceType.isNotBlank()) {
-                            AssistChip(
-                                onClick = {},
-                                label = { Text(text = deviceType) },
-                            )
-                        }
-                    }
-                    product.wifiStandard?.let { wifi ->
-                        if (wifi.isNotBlank()) {
-                            SuggestionChip(
-                                onClick = {},
-                                label = { Text(text = "Wi-Fi $wifi") },
-                            )
-                        }
-                    }
-                    if (product.isCamera) {
-                        SuggestionChip(
-                            onClick = {},
-                            label = { Text(text = "Camera") },
-                        )
-                    }
-                    if (product.isIot) {
-                        SuggestionChip(
-                            onClick = {},
-                            label = { Text(text = "IoT") },
-                        )
-                    }
-                    if (product.isARSupported) {
-                        SuggestionChip(
-                            onClick = {},
-                            label = { Text(text = "AR Supported") },
-                        )
-                    }
-                }
+                Icon(
+                    imageVector = if (isComplianceExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (isComplianceExpanded) "Collapse compliance info" else "Expand compliance info",
+                    tint = MaterialTheme.colorScheme.primary,
+                )
             }
 
-            // Product Details Section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                ),
-            ) {
+            AnimatedVisibility(visible = isComplianceExpanded) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(top = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(
-                        text = "General Info",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                    product.abbrev?.let { abbrev ->
-                        if (abbrev.isNotBlank()) {
-                            DetailRow(label = "Abbreviation", value = abbrev)
+                    product.modelName?.let { modelName ->
+                        if (modelName.isNotBlank()) {
+                            DetailRow(label = "Model Name", value = modelName)
                         }
                     }
 
-                    product.lineName?.let { lineName ->
-                        if (lineName.isNotBlank()) {
-                            DetailRow(label = "Product Line", value = lineName)
+                    product.fcc?.let { fcc ->
+                        if (fcc.isNotBlank()) {
+                            DetailRow(label = "FCC ID", value = fcc, isSelectable = true)
                         }
                     }
 
-                    product.deviceType?.let { deviceType ->
-                        if (deviceType.isNotBlank()) {
-                            DetailRow(label = "Device Type", value = deviceType)
+                    product.ic?.let { ic ->
+                        if (ic.isNotBlank()) {
+                            DetailRow(label = "IC ID", value = ic, isSelectable = true)
                         }
                     }
+                }
+            }
+        }
+    }
+}
 
-                    DetailRow(
-                        label = "Product ID",
-                        value = product.id,
-                        isSelectable = true,
+@Composable
+private fun ProductShortNamesCard(
+    product: Product,
+    modifier: Modifier = Modifier,
+) {
+    if (product.shortNames.isEmpty()) return
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Model Short Names",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                product.shortNames.forEach { shortName ->
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text(text = shortName) },
                     )
-                }
-            }
-
-            // Hardware Specs Section (if available)
-            val hasHardwareSpecs = product.numberOfPorts != null ||
-                    product.ethernetMaxSpeedMbps != null ||
-                    product.formFactors.isNotEmpty()
-
-            if (hasHardwareSpecs) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Text(
-                            text = "Hardware Specifications",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                        product.numberOfPorts?.let { ports ->
-                            DetailRow(label = "Number of Ports", value = ports.toString())
-                        }
-
-                        product.formattedEthernetSpeed?.let { speed ->
-                            DetailRow(label = "Max Ethernet Speed", value = speed)
-                        }
-
-                        if (product.formFactors.isNotEmpty()) {
-                            DetailRow(
-                                label = "Form Factor",
-                                value = product.formFactors.joinToString(", "),
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Compliance Section (if available, foldable and folded by default)
-            val hasCompliance = !product.modelName.isNullOrBlank() ||
-                    !product.fcc.isNullOrBlank() ||
-                    !product.ic.isNullOrBlank()
-
-            if (hasCompliance) {
-                var isComplianceExpanded by rememberSaveable { mutableStateOf(false) }
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { isComplianceExpanded = !isComplianceExpanded },
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = "Compliance & Model",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                            Icon(
-                                imageVector = if (isComplianceExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (isComplianceExpanded) "Collapse compliance info" else "Expand compliance info",
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-
-                        AnimatedVisibility(visible = isComplianceExpanded) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 12.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                                product.modelName?.let { modelName ->
-                                    if (modelName.isNotBlank()) {
-                                        DetailRow(label = "Model Name", value = modelName)
-                                    }
-                                }
-
-                                product.fcc?.let { fcc ->
-                                    if (fcc.isNotBlank()) {
-                                        DetailRow(label = "FCC ID", value = fcc, isSelectable = true)
-                                    }
-                                }
-
-                                product.ic?.let { ic ->
-                                    if (ic.isNotBlank()) {
-                                        DetailRow(label = "IC ID", value = ic, isSelectable = true)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Short Names / Models Section
-            if (product.shortNames.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Text(
-                            text = "Model Short Names",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            product.shortNames.forEach { shortName ->
-                                SuggestionChip(
-                                    onClick = {},
-                                    label = { Text(text = shortName) },
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -406,8 +444,8 @@ fun ProductDetailsScreen(
 private fun DetailRow(
     label: String,
     value: String,
-    isSelectable: Boolean = false,
     modifier: Modifier = Modifier,
+    isSelectable: Boolean = false,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
