@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,7 +46,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -65,13 +63,13 @@ import lv.uni.ubiassignmentapplication.feature.products.domain.model.imageUrl
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun ProductsRoute(
+fun ProductListRoute(
     onProductClick: (Product) -> Unit = {},
     viewModel: ProductsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
-    ProductsScreen(
+    ProductListScreen(
         state = state,
         onProductClick = onProductClick,
         onRefresh = viewModel::loadProducts,
@@ -81,7 +79,7 @@ fun ProductsRoute(
 }
 
 @Composable
-fun ProductsScreen(
+fun ProductListScreen(
     state: ProductsState,
     onProductClick: (Product) -> Unit = {},
     onRefresh: () -> Unit = {},
@@ -92,7 +90,7 @@ fun ProductsScreen(
         if (state.isLoading && state.products.isEmpty()) {
             FullscreenLoadingIndicator()
         } else {
-            ProductsScreenContent(
+            ProductListScreenContent(
                 state = state,
                 onProductClick = onProductClick,
                 onRefresh = onRefresh,
@@ -104,7 +102,7 @@ fun ProductsScreen(
 }
 
 @Composable
-fun ProductsScreenContent(
+fun ProductListScreenContent(
     state: ProductsState,
     onProductClick: (Product) -> Unit = {},
     onRefresh: () -> Unit = {},
@@ -384,9 +382,9 @@ private fun ProductListItemPreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun ProductsScreenPreview() {
+private fun ProductListScreenPreview() {
     UbiAssignmentApplicationTheme {
-        ProductsScreenContent(
+        ProductListScreenContent(
             state = ProductsState(
                 isLoading = false,
                 products = listOf(
@@ -416,9 +414,9 @@ private fun ProductsScreenPreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun ProductsScreenOfflinePreview() {
+private fun ProductListScreenOfflinePreview() {
     UbiAssignmentApplicationTheme {
-        ProductsScreenContent(
+        ProductListScreenContent(
             state = ProductsState(
                 isLoading = false,
                 isOffline = true,

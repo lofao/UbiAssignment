@@ -1,6 +1,5 @@
-package lv.uni.ubiassignmentapplication.di
+package lv.uni.ubiassignmentapplication
 
-import lv.uni.ubiassignmentapplication.UbiApplication
 import org.koin.dsl.module
 
 fun appModule(application: UbiApplication) = module {
