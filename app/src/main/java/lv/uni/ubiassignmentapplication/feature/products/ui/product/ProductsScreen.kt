@@ -32,7 +32,6 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -84,12 +83,7 @@ fun ProductsScreen(
 ) {
     UbiAssignmentApplicationTheme {
         if (state.isLoading && state.products.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            FullscreenLoadingIndicator()
         } else {
             ProductsScreenContent(
                 state = state,
@@ -117,53 +111,22 @@ fun ProductsScreenContent(
         state.products.filter { product -> selectedTab.matches(product) }
     }
 
-    LaunchedEffect(state.errorText) {
-        if (state.errorText.isNotEmpty()) {
-            val result = snackbarHostState.showSnackbar(
-                message = state.errorText,
-                actionLabel = "Retry",
-                duration = SnackbarDuration.Short,
-            )
-            if (result == SnackbarResult.ActionPerformed) {
-                onRefresh()
-            }
-            onErrorShown()
-        }
-    }
+    ErrorLaunchedEffect(
+        state = state,
+        hostState = snackbarHostState,
+        onRefresh = onRefresh,
+        onErrorShown = onErrorShown,
+    )
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface,
-                ) {
-                    PrimaryTabRow(
-                        selectedTabIndex = selectedTab.ordinal,
-                        modifier = Modifier
-                            .statusBarsPadding()
-                            .fillMaxWidth(),
-                    ) {
-                        ProductTab.entries.forEach { tab ->
-                            Tab(
-                                selected = selectedTab == tab,
-                                onClick = { selectedTab = tab },
-                                text = {
-                                    Text(
-                                        text = tab.title,
-                                        style = MaterialTheme.typography.titleSmall,
-                                    )
-                                },
-                            )
-                        }
-                    }
-                }
-                AnimatedVisibility(visible = state.isOffline) {
-                    OfflineModeIndicator()
-                }
-            }
+            ProductsTopBar(
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it },
+                isOffline = state.isOffline,
+            )
         },
     ) { innerPadding ->
         PullToRefreshBox(
@@ -174,41 +137,139 @@ fun ProductsScreenContent(
                 .padding(innerPadding),
         ) {
             if (filteredProducts.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = if (state.products.isEmpty()) {
-                            "No products available"
-                        } else {
-                            "No ${selectedTab.title} products found"
+                EmptyProductsView(
+                    isProductsEmpty = state.products.isEmpty(),
+                    selectedTabTitle = selectedTab.title,
+                )
+            } else {
+                ProductList(
+                    products = filteredProducts,
+                    listState = listState,
+                    onProductClick = onProductClick,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductsTopBar(
+    selectedTab: ProductTab,
+    onTabSelected: (ProductTab) -> Unit,
+    isOffline: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            PrimaryTabRow(
+                selectedTabIndex = selectedTab.ordinal,
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .fillMaxWidth(),
+            ) {
+                ProductTab.entries.forEach { tab ->
+                    Tab(
+                        selected = selectedTab == tab,
+                        onClick = { onTabSelected(tab) },
+                        text = {
+                            Text(
+                                text = tab.title,
+                                style = MaterialTheme.typography.titleSmall,
+                            )
                         },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            } else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp),
-                ) {
-                    items(
-                        items = filteredProducts,
-                        key = { it.id },
-                    ) { product ->
-                        ProductListItem(
-                            product = product,
-                            onClick = { onProductClick(product) },
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                        )
-                    }
-                }
             }
+        }
+        AnimatedVisibility(visible = isOffline) {
+            OfflineModeIndicator()
+        }
+    }
+}
+
+@Composable
+private fun EmptyProductsView(
+    isProductsEmpty: Boolean,
+    selectedTabTitle: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = if (isProductsEmpty) {
+                "No products available"
+            } else {
+                "No $selectedTabTitle products found"
+            },
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ProductList(
+    products: List<Product>,
+    listState: LazyListState,
+    onProductClick: (Product) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(
+        state = listState,
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 8.dp),
+    ) {
+        items(
+            items = products,
+            key = { it.id },
+        ) { product ->
+            ProductListItem(
+                product = product,
+                onClick = { onProductClick(product) },
+            )
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun FullscreenLoadingIndicator(
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun ErrorLaunchedEffect(
+    state: ProductsState,
+    hostState: SnackbarHostState,
+    onRefresh: () -> Unit,
+    onErrorShown: () -> Unit,
+) {
+    LaunchedEffect(state.errorText) {
+        if (state.errorText.isNotEmpty()) {
+            val result = hostState.showSnackbar(
+                message = state.errorText,
+                actionLabel = "Retry",
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                onRefresh()
+            }
+            onErrorShown()
         }
     }
 }

@@ -12,15 +12,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import lv.uni.ubiassignmentapplication.UbiApplication
 import lv.uni.ubiassignmentapplication.core.coroutines.runAsync
-import lv.uni.ubiassignmentapplication.feature.products.domain.model.Product
+import lv.uni.ubiassignmentapplication.core.network.isNetworkAvailable
 import lv.uni.ubiassignmentapplication.feature.products.domain.usecase.GetProductsUseCase
-
-data class ProductsState(
-    val isLoading: Boolean = true,
-    val errorText: String = "",
-    val products: List<Product> = emptyList(),
-    val isOffline: Boolean = false,
-)
 
 class ProductsViewModel(
     private val application: UbiApplication,
@@ -37,7 +30,7 @@ class ProductsViewModel(
 
     fun loadProducts() {
         viewModelScope.launch {
-            val offlineCurrently = !isNetworkAvailable()
+            val offlineCurrently = !application.isNetworkAvailable()
             _state.update { it.copy(isLoading = true, errorText = "", isOffline = offlineCurrently) }
             val productsResult = runAsync(dispatcher) {
                 useCase()
@@ -59,12 +52,6 @@ class ProductsViewModel(
         }
     }
 
-    private fun isNetworkAvailable(): Boolean {
-        val connectivityManager = application.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-        val network = connectivityManager?.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
 
     fun onErrorShown() {
         _state.update { it.copy(errorText = "") }
