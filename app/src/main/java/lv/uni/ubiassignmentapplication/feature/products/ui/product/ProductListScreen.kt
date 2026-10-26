@@ -79,8 +79,8 @@ fun ProductListScreen(
     ProductListScreen(
         state = state,
         onProductClick = onProductClick,
-        onRefresh = viewModel::loadProducts,
-        onErrorShown = viewModel::onErrorShown,
+        onRefresh = { viewModel.processIntent(ProductListIntent.LoadProducts) },
+        onErrorShown = { viewModel.processIntent(ProductListIntent.ErrorShown) },
         listState = listState,
     )
 }
