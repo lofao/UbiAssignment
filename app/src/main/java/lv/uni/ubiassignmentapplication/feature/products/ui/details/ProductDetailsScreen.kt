@@ -32,6 +32,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +62,8 @@ fun ProductDetailsScreen(
     product: Product,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -87,26 +90,33 @@ fun ProductDetailsScreen(
             )
         },
     ) { innerPadding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(innerPadding),
         ) {
-            ProductHeroImageCard(product = product)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                ProductHeroImageCard(product = product)
 
-            ProductHeaderSection(product = product)
+                ProductHeaderSection(product = product)
 
-            ProductGeneralInfoCard(product = product)
+                ProductGeneralInfoCard(product = product)
 
-            ProductHardwareSpecsCard(product = product)
+                ProductHardwareSpecsCard(product = product)
 
-            //Compliance section is optional
-            //ProductComplianceCard(product = product)
+                //Compliance section is optional
+                //ProductComplianceCard(product = product)
 
-            ProductShortNamesCard(product = product)
+                ProductShortNamesCard(product = product)
+            }
         }
     }
 }

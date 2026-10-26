@@ -32,6 +32,8 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,7 +68,7 @@ fun ProductsRoute(
     ProductsScreen(
         state = state,
         onProductClick = onProductClick,
-        onRetry = viewModel::loadProducts,
+        onRefresh = viewModel::loadProducts,
         onErrorShown = viewModel::onErrorShown,
         listState = listState,
     )
@@ -76,7 +78,7 @@ fun ProductsRoute(
 fun ProductsScreen(
     state: ProductsState,
     onProductClick: (Product) -> Unit = {},
-    onRetry: () -> Unit = {},
+    onRefresh: () -> Unit = {},
     onErrorShown: () -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
 ) {
@@ -92,7 +94,7 @@ fun ProductsScreen(
             ProductsScreenContent(
                 state = state,
                 onProductClick = onProductClick,
-                onRetry = onRetry,
+                onRefresh = onRefresh,
                 onErrorShown = onErrorShown,
                 listState = listState,
             )
@@ -104,7 +106,7 @@ fun ProductsScreen(
 fun ProductsScreenContent(
     state: ProductsState,
     onProductClick: (Product) -> Unit = {},
-    onRetry: () -> Unit = {},
+    onRefresh: () -> Unit = {},
     onErrorShown: () -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
 ) {
@@ -123,7 +125,7 @@ fun ProductsScreenContent(
                 duration = SnackbarDuration.Short,
             )
             if (result == SnackbarResult.ActionPerformed) {
-                onRetry()
+                onRefresh()
             }
             onErrorShown()
         }
@@ -164,43 +166,47 @@ fun ProductsScreenContent(
             }
         },
     ) { innerPadding ->
-        if (filteredProducts.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = if (state.products.isEmpty()) {
-                        "No products available"
-                    } else {
-                        "No ${selectedTab.title} products found"
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentPadding = PaddingValues(vertical = 8.dp),
-            ) {
-                items(
-                    items = filteredProducts,
-                    key = { it.id },
-                ) { product ->
-                    ProductListItem(
-                        product = product,
-                        onClick = { onProductClick(product) },
+        PullToRefreshBox(
+            isRefreshing = state.isLoading,
+            onRefresh = onRefresh,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            if (filteredProducts.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = if (state.products.isEmpty()) {
+                            "No products available"
+                        } else {
+                            "No ${selectedTab.title} products found"
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                    )
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                ) {
+                    items(
+                        items = filteredProducts,
+                        key = { it.id },
+                    ) { product ->
+                        ProductListItem(
+                            product = product,
+                            onClick = { onProductClick(product) },
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        )
+                    }
                 }
             }
         }
