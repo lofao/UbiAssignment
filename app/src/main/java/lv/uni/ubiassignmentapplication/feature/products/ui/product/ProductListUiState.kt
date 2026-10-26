@@ -10,3 +10,9 @@ data class ProductListUiState(
     val searchQuery: String = "",
     val selectedTab: ProductTab = ProductTab.ALL,
 )
+
+data class ProductDetailsUiState(
+    val product: Product? = null,
+    val isRefreshing: Boolean = false,
+    val isOffline: Boolean = false,
+)

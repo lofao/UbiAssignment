@@ -9,10 +9,15 @@ import kotlinx.coroutines.test.setMain
 import lv.uni.ubiassignmentapplication.UbiApplication
 import lv.uni.ubiassignmentapplication.feature.products.data.repository.GetProductsResult
 import lv.uni.ubiassignmentapplication.feature.products.data.repository.ProductsRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import lv.uni.ubiassignmentapplication.core.network.NetworkMonitor
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.Product
 import lv.uni.ubiassignmentapplication.feature.products.domain.usecase.GetProductsUseCase
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -50,6 +55,7 @@ class ProductsMviViewModelTest {
             application = application,
             dispatcher = testDispatcher,
             useCase = useCase,
+            networkMonitor = FakeNetworkMonitor(true),
         )
 
         viewModel.processIntent(ProductListIntent.SearchQueryChanged("camera"))
@@ -74,10 +80,48 @@ class ProductsMviViewModelTest {
             application = application,
             dispatcher = testDispatcher,
             useCase = useCase,
+            networkMonitor = FakeNetworkMonitor(true),
         )
 
         viewModel.processIntent(ProductListIntent.TabSelected(ProductTab.CAMERAS))
 
         assertEquals(ProductTab.CAMERAS, viewModel.state.value.selectedTab)
     }
+
+    @Test
+    fun `networkMonitor emitting false updates state isOffline to true dynamically`() = runTest {
+        val application = UbiApplication()
+        val fakeRepo = object : ProductsRepository {
+            override suspend fun getProducts(): GetProductsResult {
+                return GetProductsResult(products = emptyList(), isOffline = false)
+            }
+        }
+        val useCase = GetProductsUseCase(fakeRepo)
+        val fakeNetworkMonitor = FakeNetworkMonitor(true)
+
+        val viewModel = ProductsViewModel(
+            application = application,
+            dispatcher = testDispatcher,
+            useCase = useCase,
+            networkMonitor = fakeNetworkMonitor,
+        )
+
+        assertFalse(viewModel.state.value.isOffline)
+
+        fakeNetworkMonitor.isOnlineFlow.value = false
+
+        assertTrue(viewModel.state.value.isOffline)
+
+        fakeNetworkMonitor.isOnlineFlow.value = true
+
+        assertFalse(viewModel.state.value.isOffline)
+    }
+}
+
+private class FakeNetworkMonitor(
+    initialIsOnline: Boolean = true,
+) : NetworkMonitor {
+    val isOnlineFlow = MutableStateFlow(initialIsOnline)
+    override val isOnline: Flow<Boolean> = isOnlineFlow
+    override var isCurrentlyOnline: Boolean = initialIsOnline
 }

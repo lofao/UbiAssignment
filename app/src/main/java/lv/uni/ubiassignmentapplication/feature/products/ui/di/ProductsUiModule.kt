@@ -12,6 +12,7 @@ val ProductsUiModule = module {
             application = get<UbiApplication>(),
             dispatcher = Dispatchers.IO,
             useCase = get(),
+            networkMonitor = get(),
         )
     }
 }

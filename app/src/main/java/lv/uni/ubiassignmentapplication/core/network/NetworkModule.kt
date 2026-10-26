@@ -21,6 +21,10 @@ val NetworkModule = module {
 
     single<Json> { defaultJson() }
 
+    single<NetworkMonitor> {
+        ConnectivityNetworkMonitor(context = get())
+    }
+
 }
 
 internal fun defaultJson() = Json(DefaultJson) {

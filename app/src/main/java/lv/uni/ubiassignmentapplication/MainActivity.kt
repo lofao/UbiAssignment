@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
             UbiAssignmentApplicationTheme {
                 val viewModel: ProductsViewModel = koinViewModel()
                 val state by viewModel.state.collectAsStateWithLifecycle()
+                val detailsState by viewModel.detailsState.collectAsStateWithLifecycle()
                 val backStack = remember { mutableStateListOf<Screen>(Screen.ProductList) }
 
                 NavDisplay(
@@ -49,14 +50,14 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         entry<Screen.ProductDetails> { destination ->
+                            viewModel.updateProduct(destination.product)
                             ProductDetailsScreen(
-                                product = destination.product,
+                                state = detailsState,
                                 onBackClick = {
                                     if (backStack.size > 1) {
                                         backStack.removeAt(backStack.lastIndex)
                                     }
                                 },
-                                isRefreshing = state.isLoading,
                                 onRefresh = { viewModel.processIntent(ProductListIntent.LoadProducts) },
                             )
                         }
