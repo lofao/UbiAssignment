@@ -1,8 +1,5 @@
 package lv.uni.ubiassignmentapplication.feature.products.ui.product
 
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineDispatcher
@@ -21,7 +18,7 @@ class ProductsViewModel(
     private val useCase: GetProductsUseCase,
 ) : AndroidViewModel(application) {
 
-    private val _state = MutableStateFlow(ProductsState())
+    private val _state = MutableStateFlow(ProductListUiState())
     val state = _state.asStateFlow()
 
     init {

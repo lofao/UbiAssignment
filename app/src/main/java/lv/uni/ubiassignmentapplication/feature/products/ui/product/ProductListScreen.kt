@@ -80,7 +80,7 @@ fun ProductListRoute(
 
 @Composable
 fun ProductListScreen(
-    state: ProductsState,
+    state: ProductListUiState,
     onProductClick: (Product) -> Unit = {},
     onRefresh: () -> Unit = {},
     onErrorShown: () -> Unit = {},
@@ -103,7 +103,7 @@ fun ProductListScreen(
 
 @Composable
 fun ProductListScreenContent(
-    state: ProductsState,
+    state: ProductListUiState,
     onProductClick: (Product) -> Unit = {},
     onRefresh: () -> Unit = {},
     onErrorShown: () -> Unit = {},
@@ -266,7 +266,7 @@ private fun FullscreenLoadingIndicator(
 
 @Composable
 private fun ErrorLaunchedEffect(
-    state: ProductsState,
+    state: ProductListUiState,
     hostState: SnackbarHostState,
     onRefresh: () -> Unit,
     onErrorShown: () -> Unit,
@@ -385,7 +385,7 @@ private fun ProductListItemPreview() {
 private fun ProductListScreenPreview() {
     UbiAssignmentApplicationTheme {
         ProductListScreenContent(
-            state = ProductsState(
+            state = ProductListUiState(
                 isLoading = false,
                 products = listOf(
                     Product(
@@ -417,7 +417,7 @@ private fun ProductListScreenPreview() {
 private fun ProductListScreenOfflinePreview() {
     UbiAssignmentApplicationTheme {
         ProductListScreenContent(
-            state = ProductsState(
+            state = ProductListUiState(
                 isLoading = false,
                 isOffline = true,
                 products = listOf(
