@@ -18,6 +18,8 @@ internal fun ProductsResponseDto.ProductDto?.toProduct(): Product? {
         id = productId,
         productName = productName,
         imageId = this.images?.default,
-        shortNames = this.shortNames ?: emptyList()
+        lineId = this.line?.id,
+        lineName = this.line?.name,
+        shortNames = this.shortNames ?: emptyList(),
     )
 }

@@ -15,39 +15,39 @@ import lv.uni.ubiassignmentapplication.feature.products.domain.usecase.GetProduc
 data class ProductsState(
     val isLoading: Boolean = true,
     val errorText: String = "",
-    val products: List<Product> = emptyList()
+    val products: List<Product> = emptyList(),
 )
 
 class ProductsViewModel(
     private val application: UbiApplication,
     private val dispatcher: CoroutineDispatcher,
-    private val useCase: GetProductsUseCase
-): AndroidViewModel(application) {
+    private val useCase: GetProductsUseCase,
+) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(ProductsState())
     val state = _state.asStateFlow()
 
     init {
+        loadProducts()
+    }
+
+    fun loadProducts() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            _state.update { it.copy(isLoading = true, errorText = "") }
             val productsResult = runAsync(dispatcher) {
                 useCase()
             }
             if (productsResult.isFailure) {
-                _state.update { it.copy(isLoading = false, errorText = "Error") }
-                // Handle error
+                val errorMessage = productsResult.getError().localizedMessage ?: "Failed to load products"
+                _state.update { it.copy(isLoading = false, errorText = errorMessage) }
                 return@launch
             }
             val products = productsResult.getResponse()
-            _state.update { it.copy(isLoading = false, products = products) }
+            _state.update { it.copy(isLoading = false, products = products, errorText = "") }
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-
+    fun onErrorShown() {
+        _state.update { it.copy(errorText = "") }
     }
-
-
-
 }

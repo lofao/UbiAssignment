@@ -1,0 +1,2 @@
+-keep class lv.uni.ubiassignmentapplication.UbiApplication { *; }
+-keep class lv.uni.ubiassignmentapplication.MainActivity { *; }

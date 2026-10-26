@@ -10,9 +10,16 @@ data class ProductsResponseDto(val devices: List<ProductDto>? = null) {
     data class ProductDto(
         @SerialName("deviceType") val deviceType: String? = null,
         @SerialName("id") val id: String? = null,
-        @SerialName("product")  val product: ProductNameDto? = null,
+        @SerialName("product") val product: ProductNameDto? = null,
         @SerialName("images") val images: ProductImagesDto? = null,
+        @SerialName("line") val line: ProductLineDto? = null,
         @SerialName("shortnames") val shortNames: List<String>? = null,
+    )
+
+    @Serializable
+    data class ProductLineDto(
+        @SerialName("id") val id: String? = null,
+        @SerialName("name") val name: String? = null,
     )
 
     @Serializable
