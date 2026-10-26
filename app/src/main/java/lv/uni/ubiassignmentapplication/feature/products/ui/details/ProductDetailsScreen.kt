@@ -1,6 +1,7 @@
 package lv.uni.ubiassignmentapplication.feature.products.ui.details
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -48,7 +50,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.GlideSubcomposition
+import com.bumptech.glide.integration.compose.RequestState
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import lv.uni.ubiassignmentapplication.core.ui.UbiAssignmentApplicationTheme
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.Product
@@ -146,13 +149,41 @@ private fun ProductHeroImageCard(
         ) {
             val imageUrl = product.imageUrl(LocalContext.current, 512)
             if (!imageUrl.isNullOrEmpty()) {
-                GlideImage(
+                GlideSubcomposition(
                     model = imageUrl,
-                    contentDescription = product.productName,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit,
-                ) { requestBuilder ->
-                    requestBuilder.diskCacheStrategy(DiskCacheStrategy.ALL)
+                    requestBuilderTransform = { requestBuilder ->
+                        requestBuilder.diskCacheStrategy(DiskCacheStrategy.ALL)
+                    },
+                ) {
+                    when (state) {
+                        RequestState.Loading -> {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                        RequestState.Failure -> {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "Failed to load image",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        is RequestState.Success -> {
+                            Image(
+                                painter = painter,
+                                contentDescription = product.productName,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Fit,
+                            )
+                        }
+                    }
                 }
             } else {
                 Text(
