@@ -18,10 +18,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -38,12 +42,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -109,6 +116,10 @@ fun ProductsScreenContent(
 
     val filteredProducts = remember(state.products, selectedTab) {
         state.products.filter { product -> selectedTab.matches(product) }
+    }
+
+    LaunchedEffect(selectedTab) {
+        listState.scrollToItem(0)
     }
 
     ErrorLaunchedEffect(
@@ -224,18 +235,21 @@ private fun ProductList(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp),
     ) {
-        items(
+        itemsIndexed(
             items = products,
-            key = { it.id },
-        ) { product ->
+            key = { _, product -> product.id },
+            contentType = { _, _ -> "product" },
+        ) { index, product ->
             ProductListItem(
                 product = product,
                 onClick = { onProductClick(product) },
             )
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-            )
+            if (index < products.lastIndex) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                )
+            }
         }
     }
 }
@@ -259,17 +273,20 @@ private fun ErrorLaunchedEffect(
     onRefresh: () -> Unit,
     onErrorShown: () -> Unit,
 ) {
+    val currentOnRefresh by rememberUpdatedState(onRefresh)
+    val currentOnErrorShown by rememberUpdatedState(onErrorShown)
+
     LaunchedEffect(state.errorText) {
         if (state.errorText.isNotEmpty()) {
             val result = hostState.showSnackbar(
                 message = state.errorText,
                 actionLabel = "Retry",
-                duration = SnackbarDuration.Short,
+                duration = SnackbarDuration.Long,
             )
             if (result == SnackbarResult.ActionPerformed) {
-                onRefresh()
+                currentOnRefresh()
             }
-            onErrorShown()
+            currentOnErrorShown()
         }
     }
 }
@@ -284,25 +301,40 @@ fun ProductListItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .clickable(
+                role = Role.Button,
+                onClick = onClick,
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val imageUrl = product.imageUrl()
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            contentAlignment = Alignment.Center,
+        Surface(
+            modifier = Modifier.size(56.dp),
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
-            if (!imageUrl.isNullOrEmpty()) {
-                GlideImage(
-                    model = imageUrl,
-                    contentDescription = product.productName,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit,
-                ) { requestBuilder ->
-                    requestBuilder.diskCacheStrategy(DiskCacheStrategy.ALL)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (!imageUrl.isNullOrEmpty()) {
+                    GlideImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit,
+                    ) { requestBuilder ->
+                        requestBuilder.diskCacheStrategy(DiskCacheStrategy.ALL)
+                    }
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(24.dp),
+                    )
                 }
             }
         }
@@ -320,17 +352,15 @@ fun ProductListItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            product.deviceType?.let { deviceType ->
-                if (deviceType.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = deviceType,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+            product.deviceType?.takeIf { it.isNotBlank() }?.let { deviceType ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = deviceType.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
