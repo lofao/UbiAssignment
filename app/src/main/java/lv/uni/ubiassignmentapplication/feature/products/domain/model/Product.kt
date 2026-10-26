@@ -1,5 +1,7 @@
 package lv.uni.ubiassignmentapplication.feature.products.domain.model
 
+import android.content.Context
+
 data class Product(
     val id: String,
     val productName: String,
@@ -20,9 +22,42 @@ data class Product(
     val isARSupported: Boolean = false,
 )
 
+fun Product.assetRelativePath(): String? {
+    val imgId = imageId ?: return null
+    return "$id/$imgId.png"
+}
+
+fun Product.assetRelativePaths(): List<String> {
+    val imgId = imageId ?: return emptyList()
+    return listOf(
+        "$id/$imgId.png",
+        "$id/$imgId",
+        "$id/default/$imgId.png",
+    )
+}
+
 fun Product.imageUrl(size: Int = 256): String? {
     val imgId = imageId ?: return null
     return "https://images.svc.ui.com/?u=https%3A%2F%2Fstatic.ui.com%2Ffingerprint%2Fui%2Fimages%2F$id%2Fdefault%2F$imgId.png&w=$size&q=75"
+}
+
+fun Product.imageUrl(context: Context, size: Int = 256): String? {
+    if (imageId == null) return null
+    val relativePaths = assetRelativePaths()
+
+    // 1. Check preloaded APK assets (e.g. assets/product-id/imageId.png)
+    for (relPath in relativePaths) {
+        try {
+            context.assets?.open(relPath)?.use {
+                return "file:///android_asset/$relPath"
+            }
+        } catch (_: Exception) {
+            // Asset not present in APK assets
+        }
+    }
+
+    // 2. Fallback to remote URL
+    return imageUrl(size)
 }
 
 val Product.formattedEthernetSpeed: String?

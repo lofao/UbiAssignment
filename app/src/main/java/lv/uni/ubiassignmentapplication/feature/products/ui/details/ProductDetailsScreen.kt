@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -143,7 +144,7 @@ private fun ProductHeroImageCard(
                 .padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            val imageUrl = product.imageUrl(512)
+            val imageUrl = product.imageUrl(LocalContext.current, 512)
             if (!imageUrl.isNullOrEmpty()) {
                 GlideImage(
                     model = imageUrl,
