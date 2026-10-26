@@ -1,5 +1,6 @@
 package lv.uni.ubiassignmentapplication.feature.products.ui.product
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,7 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import lv.uni.ubiassignmentapplication.core.ui.UbiAssignmentApplicationTheme
+import lv.uni.ubiassignmentapplication.core.ui.components.OfflineModeIndicator
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.Product
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.imageUrl
 import org.koin.compose.viewmodel.koinViewModel
@@ -125,28 +127,33 @@ fun ProductsScreenContent(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface,
-            ) {
-                PrimaryTabRow(
-                    selectedTabIndex = selectedTab.ordinal,
-                    modifier = Modifier
-                        .statusBarsPadding()
-                        .fillMaxWidth(),
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surface,
                 ) {
-                    ProductTab.entries.forEach { tab ->
-                        Tab(
-                            selected = selectedTab == tab,
-                            onClick = { selectedTab = tab },
-                            text = {
-                                Text(
-                                    text = tab.title,
-                                    style = MaterialTheme.typography.titleSmall,
-                                )
-                            },
-                        )
+                    PrimaryTabRow(
+                        selectedTabIndex = selectedTab.ordinal,
+                        modifier = Modifier
+                            .statusBarsPadding()
+                            .fillMaxWidth(),
+                    ) {
+                        ProductTab.entries.forEach { tab ->
+                            Tab(
+                                selected = selectedTab == tab,
+                                onClick = { selectedTab = tab },
+                                text = {
+                                    Text(
+                                        text = tab.title,
+                                        style = MaterialTheme.typography.titleSmall,
+                                    )
+                                },
+                            )
+                        }
                     }
+                }
+                AnimatedVisibility(visible = state.isOffline) {
+                    OfflineModeIndicator()
                 }
             }
         },
@@ -295,6 +302,27 @@ private fun ProductsScreenPreview() {
                         id = "3",
                         productName = "UniFi Switch 24",
                         deviceType = "switch",
+                        imageId = "977c1f8c477549aeb728727fd4ecc62",
+                    ),
+                ),
+            ),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProductsScreenOfflinePreview() {
+    UbiAssignmentApplicationTheme {
+        ProductsScreenContent(
+            state = ProductsState(
+                isLoading = false,
+                isOffline = true,
+                products = listOf(
+                    Product(
+                        id = "ed67d43e-2d5c-4928-ace8edf984baeff1",
+                        productName = "UniFi Protect G4 Camera",
+                        deviceType = "camera",
                         imageId = "977c1f8c477549aeb728727fd4ecc62",
                     ),
                 ),

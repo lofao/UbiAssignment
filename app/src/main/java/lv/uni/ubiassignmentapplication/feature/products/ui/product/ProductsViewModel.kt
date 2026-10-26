@@ -1,5 +1,8 @@
 package lv.uni.ubiassignmentapplication.feature.products.ui.product
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineDispatcher
@@ -16,6 +19,7 @@ data class ProductsState(
     val isLoading: Boolean = true,
     val errorText: String = "",
     val products: List<Product> = emptyList(),
+    val isOffline: Boolean = false,
 )
 
 class ProductsViewModel(
@@ -33,18 +37,33 @@ class ProductsViewModel(
 
     fun loadProducts() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorText = "") }
+            val offlineCurrently = !isNetworkAvailable()
+            _state.update { it.copy(isLoading = true, errorText = "", isOffline = offlineCurrently) }
             val productsResult = runAsync(dispatcher) {
                 useCase()
             }
             if (productsResult.isFailure) {
                 val errorMessage = productsResult.getError().localizedMessage ?: "Failed to load products"
-                _state.update { it.copy(isLoading = false, errorText = errorMessage) }
+                _state.update { it.copy(isLoading = false, errorText = errorMessage, isOffline = true) }
                 return@launch
             }
-            val products = productsResult.getResponse()
-            _state.update { it.copy(isLoading = false, products = products, errorText = "") }
+            val result = productsResult.getResponse()
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    products = result.products,
+                    isOffline = result.isOffline || offlineCurrently,
+                    errorText = "",
+                )
+            }
         }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        val connectivityManager = application.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        val network = connectivityManager?.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
     fun onErrorShown() {
