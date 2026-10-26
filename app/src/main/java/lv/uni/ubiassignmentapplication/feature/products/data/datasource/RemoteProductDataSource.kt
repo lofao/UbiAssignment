@@ -7,6 +7,6 @@ import lv.uni.ubiassignmentapplication.feature.products.data.model.ProductsRespo
 
 class RemoteProductDataSource(private val httpClient: HttpClient): ProductDataSource {
     override suspend fun getProducts(): ProductsResponseDto {
-        return httpClient.get("/fingetprint/ui/public.json").body()
+        return httpClient.get("/fingerprint/ui/public.json").body()
     }
 }

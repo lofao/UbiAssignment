@@ -4,10 +4,6 @@ import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Severity
 
-interface LoggerConfig {
-    val minSeverity: Severity
-    val logWriterList: List<LogWriter>
-}
 
 /**
  * Factory function to create a StaticConfig
@@ -24,4 +20,4 @@ data class StaticConfig(
     override val logWriterList: List<LogWriter> = listOf(CommonWriter()),
 ) : co.touchlab.kermit.LoggerConfig
 
-internal val DEFAULT_MIN_SEVERITY = Severity.Verbose
+internal val DEFAULT_MIN_SEVERITY = Severity.Warn

@@ -21,10 +21,11 @@ data class ProductsResponseDto(val devices: List<ProductDto>? = null) {
         @SerialName("name") val name: String? = null,
     )
 
+    @Serializable
     data class ProductImagesDto(
         @SerialName("default") val default: String? = null,
         @SerialName("nopadding") val noPadding: String? = null,
-        @SerialName("topology") val topology: String? = null
+        @SerialName("topology") val topology: String? = null,
     )
 
 }
