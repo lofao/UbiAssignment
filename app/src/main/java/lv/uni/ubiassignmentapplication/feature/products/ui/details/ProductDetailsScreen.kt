@@ -43,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -52,24 +53,43 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideSubcomposition
 import com.bumptech.glide.integration.compose.RequestState
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import kotlinx.coroutines.flow.StateFlow
 import lv.uni.ubiassignmentapplication.core.ui.UbiAssignmentApplicationTheme
+import lv.uni.ubiassignmentapplication.core.ui.components.OfflineModeIndicator
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.Product
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.formattedEthernetSpeed
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.imageUrl
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.isCamera
 import lv.uni.ubiassignmentapplication.feature.products.domain.model.isIot
+import lv.uni.ubiassignmentapplication.feature.products.ui.product.ProductDetailsUiState
+
+@Composable
+fun ProductDetailsScreen(
+    stateFlow: StateFlow<ProductDetailsUiState>,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onRefresh: () -> Unit = {},
+) {
+    val state by stateFlow.collectAsStateWithLifecycle()
+    ProductDetailsScreen(
+        state,
+        onBackClick,
+        modifier,
+        onRefresh
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailsScreen(
-    product: Product,
+    state: ProductDetailsUiState,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -80,33 +100,40 @@ fun ProductDetailsScreen(
         keyboardController?.hide()
     }
 
+    val product = state.product ?: return
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = product.productName,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+            Column(modifier = Modifier.fillMaxWidth()) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = product.productName,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                )
+                AnimatedVisibility(visible = state.isOffline) {
+                    OfflineModeIndicator()
+                }
+            }
         },
     ) { innerPadding ->
         PullToRefreshBox(
-            isRefreshing = isRefreshing,
+            isRefreshing = state.isRefreshing,
             onRefresh = onRefresh,
             modifier = Modifier
                 .fillMaxSize()
@@ -148,9 +175,9 @@ private fun ProductHeroImageCard(
             .height(240.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            containerColor = Color.Transparent
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Box(
             modifier = Modifier
@@ -533,24 +560,45 @@ private fun DetailRow(
 private fun ProductDetailsScreenPreview() {
     UbiAssignmentApplicationTheme {
         ProductDetailsScreen(
-            product = Product(
-                id = "ed67d43e-2d5c-4928-ace8edf984baeff1",
-                productName = "UniFi Protect G4 Camera",
-                deviceType = "camera",
-                imageId = "977c1f8c477549aeb728727fd4ecc62",
-                lineId = "unifi-protect",
-                lineName = "UniFi Protect",
-                shortNames = listOf("UVC-G4-PRO", "G4 Pro"),
-                sku = "UVC-G4-PRO",
-                abbrev = "G4 Pro",
-                modelName = "UVC-G4-PRO",
-                fcc = "SWX-UVCG4P",
-                ic = "6545A-UVCG4P",
-                numberOfPorts = 1,
-                ethernetMaxSpeedMbps = 1000,
-                formFactors = listOf("WALL", "POLE"),
-                wifiStandard = "5e",
-                isARSupported = true,
+            ProductDetailsUiState(
+                product = Product(
+                    id = "ed67d43e-2d5c-4928-ace8edf984baeff1",
+                    productName = "UniFi Protect G4 Camera",
+                    deviceType = "camera",
+                    imageId = "977c1f8c477549aeb728727fd4ecc62",
+                    lineId = "unifi-protect",
+                    lineName = "UniFi Protect",
+                    shortNames = listOf("UVC-G4-PRO", "G4 Pro"),
+                    sku = "UVC-G4-PRO",
+                    abbrev = "G4 Pro",
+                    modelName = "UVC-G4-PRO",
+                    fcc = "SWX-UVCG4P",
+                    ic = "6545A-UVCG4P",
+                    numberOfPorts = 1,
+                    ethernetMaxSpeedMbps = 1000,
+                    formFactors = listOf("WALL", "POLE"),
+                    wifiStandard = "5e",
+                    isARSupported = true,
+                ),
+            ),
+            onBackClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProductDetailsScreenOfflinePreview() {
+    UbiAssignmentApplicationTheme {
+        ProductDetailsScreen(
+            ProductDetailsUiState(
+                product = Product(
+                    id = "ed67d43e-2d5c-4928-ace8edf984baeff1",
+                    productName = "UniFi Protect G4 Camera",
+                    deviceType = "camera",
+                    imageId = "977c1f8c477549aeb728727fd4ecc62",
+                ),
+                isOffline = true,
             ),
             onBackClick = {},
         )

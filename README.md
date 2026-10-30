@@ -52,10 +52,6 @@ An Android application built with Jetpack Compose, Kotlin Coroutines, Koin, Ktor
    * **Decision**: Searching is performed in-memory across product names, SKUs, model names, device types, line names, IDs, ports, and network capabilities (`"10g"`, `"24 port switch"`).
    * **Tradeoff**: Delivers instant zero-latency feedback as the user types or toggles category tabs ("All", "Cameras", "IoT").
 
-5. **Image Caching Strategy**:
-   * **Decision**: Employs **Glide Compose** with disk caching (`DiskCacheStrategy.ALL`) alongside local APK asset resolution and local file override checks.
-   * **Tradeoff**: Remote product images are cached locally on disk and in memory so previously loaded images remain available offline and reload instantaneously without additional bandwidth usage.
-
 ---
 
 ## 📚 Libraries Used & Why

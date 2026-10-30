@@ -7,9 +7,12 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val ProductsUiModule = module {
-    viewModel { ProductsViewModel(
-        application = get<UbiApplication>(),
-        dispatcher = Dispatchers.IO,
-        useCase = get())
+    viewModel {
+        ProductsViewModel(
+            application = get<UbiApplication>(),
+            dispatcher = Dispatchers.IO,
+            useCase = get(),
+            networkMonitor = get(),
+        )
     }
 }

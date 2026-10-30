@@ -1,5 +1,6 @@
 package lv.uni.ubiassignmentapplication.feature.products.ui.product
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
@@ -51,6 +53,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
@@ -79,8 +84,8 @@ fun ProductListScreen(
     ProductListScreen(
         state = state,
         onProductClick = onProductClick,
-        onRefresh = viewModel::loadProducts,
-        onErrorShown = viewModel::onErrorShown,
+        onRefresh = { viewModel.processIntent(ProductListIntent.LoadProducts) },
+        onErrorShown = { viewModel.processIntent(ProductListIntent.ErrorShown) },
         listState = listState,
     )
 }
@@ -183,39 +188,89 @@ private fun ProductsTopBar(
     isOffline: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            Column(
-                modifier = Modifier
-                    .statusBarsPadding()
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            ) {
-                ProductSearchField(searchQuery, onSearchQueryChange)
-            }
+    var isSearchExpanded by rememberSaveable { mutableStateOf(searchQuery.isNotEmpty()) }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(isSearchExpanded) {
+        if (isSearchExpanded) {
+            focusRequester.requestFocus()
         }
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            PrimaryTabRow(
-                selectedTabIndex = selectedTab.ordinal,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                ProductTab.entries.forEach { tab ->
-                    Tab(
-                        selected = selectedTab == tab,
-                        onClick = { onTabSelected(tab) },
-                        text = {
-                            Text(
-                                text = tab.title,
-                                style = MaterialTheme.typography.titleSmall,
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        AnimatedContent(
+            targetState = isSearchExpanded,
+            label = "SearchHeaderAnimation",
+        ) { expanded ->
+            if (expanded) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surface,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .statusBarsPadding()
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconButton(
+                            onClick = {
+                                onSearchQueryChange("")
+                                isSearchExpanded = false
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Close search",
                             )
-                        },
-                    )
+                        }
+                        ProductSearchField(
+                            searchQuery = searchQuery,
+                            onSearchQueryChange = onSearchQueryChange,
+                            focusRequester = focusRequester,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            } else {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surface,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .statusBarsPadding()
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        PrimaryTabRow(
+                            selectedTabIndex = selectedTab.ordinal,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            ProductTab.entries.forEach { tab ->
+                                Tab(
+                                    selected = selectedTab == tab,
+                                    onClick = { onTabSelected(tab) },
+                                    text = {
+                                        Text(
+                                            text = tab.title,
+                                            style = MaterialTheme.typography.titleSmall,
+                                        )
+                                    },
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { isSearchExpanded = true },
+                            modifier = Modifier.padding(end = 4.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search products",
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -228,12 +283,16 @@ private fun ProductsTopBar(
 @Composable
 private fun ProductSearchField(
     searchQuery: String,
-    onSearchQueryChange: (String) -> Unit
+    onSearchQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
 ) {
     OutlinedTextField(
         value = searchQuery,
         onValueChange = onSearchQueryChange,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
         placeholder = { Text("Search products...") },
         leadingIcon = {
             Icon(
@@ -254,9 +313,9 @@ private fun ProductSearchField(
         singleLine = true,
         shape = RoundedCornerShape(28.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            disabledContainerColor = Color.White,
             focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
         ),
@@ -376,7 +435,7 @@ fun ProductListItem(
         Surface(
             modifier = Modifier.size(56.dp),
             shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            //color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),

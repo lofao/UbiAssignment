@@ -7,4 +7,12 @@ data class ProductListUiState(
     val errorText: String = "",
     val products: List<Product> = emptyList(),
     val isOffline: Boolean = false,
+    val searchQuery: String = "",
+    val selectedTab: ProductTab = ProductTab.ALL,
+)
+
+data class ProductDetailsUiState(
+    val product: Product? = null,
+    val isRefreshing: Boolean = false,
+    val isOffline: Boolean = false,
 )
